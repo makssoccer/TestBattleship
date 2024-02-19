@@ -3,27 +3,23 @@ package org.example.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Scanner;
+
+import static org.example.model.CommonVariables.*;
 
 public class BattleshipField {
 
     private static final int BOARD_SIZE = 16;
     private static final char[] COLUMN_LABELS = "ABCDEFGHIJKLMNOP".toCharArray();
     private static final int[] SHIP_SIZES = {6, 5, 5, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1};
-
-    private static final char SHIP_SYMBOL = 'S';
-    private static final char HIT_SYMBOL = 'H';
-    private static final char DESTROY_SYMBOL = 'X';
-    private static final char EMPTY_SYMBOL = ' ';
-    private static final char MISS_SYMBOL = '.';
-    public int number_of_ship = 21;
-
+    private final int CONST = 21;
+    private int numberOfShip ;
     public char[][] gameBoard;
-    private int shipsRemaining;
+    public int shipsRemaining;
 
 
     public BattleshipField() {
         gameBoard = new char[BOARD_SIZE][BOARD_SIZE];
+        numberOfShip = CONST;
         initializeBoard();
         placeShips();
         printBoard();
@@ -277,9 +273,9 @@ public class BattleshipField {
 
 
     public void checkAfterDestroy() {
-        number_of_ship -= 1;
-        if (number_of_ship == 0) {
-            BattleshipClient.isGameOver = true;
+        numberOfShip -= 1;
+        if (numberOfShip == 0) {
+            BattleshipClient.gameOver();
         }
 
     }

@@ -4,15 +4,12 @@ package org.example.model;
 
 import javax.websocket.*;
 import java.io.IOException;
-import java.util.Scanner;
 
 
 @ClientEndpoint
 public class BattleshipClientEndpoint {
     private  Session session;
     public  BattleshipField battleshipField;
-
-//    private Scanner scanner = new Scanner(System.in);
 
     public  Session getSession() {
         return this.session;
@@ -57,9 +54,6 @@ public class BattleshipClientEndpoint {
         } catch (IOException e) {
             System.err.println("Failed to send message: " + e.getMessage());
         }
-    }
-    public void sendBattleshipField () throws EncodeException, IOException {
-        session.getBasicRemote().sendObject(battleshipField);
     }
 
 }

@@ -8,37 +8,27 @@ import java.net.URISyntaxException;
 import java.util.Scanner;
 import javax.websocket.*;
 
+import static org.example.model.CommonVariables.*;
+
 public class BattleshipClient {
 
     private static final String SERVER_ADDRESS = "ws://localhost:8080/";
 
     private static Scanner scanner = new Scanner(System.in);
 
-    public static BattleshipField playerField;
-
-    public static BattleshipField botBoardField;
-
     public static boolean isGameOver = false;
-
-    private static String name;
-
-    private static final char SHIP_SYMBOL = 'S';
-    private static final char HIT_SYMBOL = 'H';
-    private static final char DESTROY_SYMBOL = 'X';
-    private static final char EMPTY_SYMBOL = ' ';
-    private static final char MISS_SYMBOL = '.';
-    private static BattleshipBot bot;
 
 
     public static void main(String[] args) {
 
         System.out.println("Please enter your username:");
-        name = scanner.nextLine();
+        String name = scanner.nextLine();
 
         System.out.println("Welcome to Battleship!");
         System.out.println("Select game mode:");
         System.out.println("1. Single player");
         System.out.println("2. Online");
+
 
         int choice = scanner.nextInt();
         scanner.nextLine(); // Consume newline left-over
@@ -46,11 +36,12 @@ public class BattleshipClient {
         switch (choice) {
             case 1:
                 System.out.println("Starting single player game...");
+
                 startSinglePlayerGame();
                 break;
             case 2:
                 System.out.println("Starting online game...");
-                startOnlineGame();
+                startOnlineGame(name);
                 break;
             default:
                 System.out.println("Invalid choice. Exiting...");
@@ -59,95 +50,97 @@ public class BattleshipClient {
     }
 
     private static void startSinglePlayerGame() {
-        playerField = new BattleshipField();
-        System.out.println("------------------------------");
-        botBoardField = new BattleshipField();
-        bot = new BattleshipBot(playerField);
 
+        АbstractField аbstractField = new АbstractField();// Создаём экземпляр абстрактного поля, где будут созданы поля
+        BattleshipBot bot = new BattleshipBot(аbstractField.playerBoard);// Создаём бота
         System.out.println("Let's play Battleship!");
 
         while (!isGameOver) {
-//             Ход игрока (пропущен для простоты)
-            processPlayerTurn();
-//             Ход бота
-            processBotTurn();
+            // Ход игрока
+            processPlayerTurn(аbstractField);
+            // Ход бота
+            processBotTurn(аbstractField, bot);
         }
 
         System.out.println("Game Over!");
 
     }
 
-    private static void processBotTurn() {
-
+    private static void processBotTurn(АbstractField аbstractField, BattleshipBot bot) {
+        // Выбор координаты ботом
         String guess = bot.makeMove();
+
         int col = guess.charAt(0) - 'A';
         int row = Integer.parseInt(guess.substring(1)) - 1;
 
-        // Стреляем в клетку
-        if (playerField.gameBoard[row][col] == SHIP_SYMBOL) {
-            playerField.gameBoard[row][col] = HIT_SYMBOL; // Попадание
-
-            if (playerField.checkOtherCoordinates(row, col)) {
-                playerField.markSunkShip(row, col);
-                playerField.checkAfterDestroy();
+        // Проверка на попадание
+        if (аbstractField.playerBoard.gameBoard[row][col] == SHIP_SYMBOL) {
+            // Попадание
+            аbstractField.playerBoard.gameBoard[row][col] = HIT_SYMBOL;
+            // Проверка на уничтожение корабля
+            if (аbstractField.playerBoard.checkOtherCoordinates(row, col)) {
+                аbstractField.destroy(row, col,аbstractField.playerBoard);
                 bot.setIsSearching();
-                System.out.println("You Kill at " + (char) ('A' + col) + (row + 1));
+                System.out.println("Bot Kill at " + (char) ('A' + col) + (row + 1));
             } else {
-                System.out.println("You Wounded at " + (char) ('A' + col) + (row + 1));
+                System.out.println("Bot Wounded at " + (char) ('A' + col) + (row + 1));
             }
             System.out.println("Player Board");
-            playerField.printBoard();
-            processBotTurn();
+            аbstractField.playerBoard.printBoard();
+            processBotTurn(аbstractField,bot);
 
-        } else if (playerField.gameBoard[row][col] == MISS_SYMBOL || playerField.gameBoard[row][col] == HIT_SYMBOL || playerField.gameBoard[row][col] == DESTROY_SYMBOL) {
-            processBotTurn();
+            // Проверка на попадание в повреждённый участок корабля, повторную стрельбу
+        } else if (аbstractField.playerBoard.gameBoard[row][col] == MISS_SYMBOL ||
+                аbstractField.playerBoard.gameBoard[row][col] == HIT_SYMBOL ||
+                аbstractField.playerBoard.gameBoard[row][col] == DESTROY_SYMBOL) {
+            processBotTurn(аbstractField, bot);
         } else {
-            playerField.gameBoard[row][col] = MISS_SYMBOL; // Промах
+            аbstractField.playerBoard.gameBoard[row][col] = MISS_SYMBOL; // Промах
             System.out.println("Bot missed at " + (char) ('A' + col) + (row + 1));
             System.out.println("Player Board");
-            playerField.printBoard();
+            аbstractField.playerBoard.printBoard();
         }
     }
 
-    private static void processPlayerTurn() {
+    private static void processPlayerTurn(АbstractField abstractFild) {
 
         System.out.println("Enter your guess (row and column, e.g. A5): ");
         String guess = scanner.nextLine().toUpperCase();
         int col = guess.charAt(0) - 'A';
         int row = Integer.parseInt(guess.substring(1)) - 1;
 
-        if (botBoardField.gameBoard[row][col] == SHIP_SYMBOL) {
-            botBoardField.gameBoard[row][col] = HIT_SYMBOL; // Попадание
+        // Проверка на попадание
+        if (abstractFild.botBoard.gameBoard[row][col] == SHIP_SYMBOL) {
 
-            if (botBoardField.checkOtherCoordinates(row, col)) {
-                botBoardField.markSunkShip(row, col);
-                botBoardField.checkAfterDestroy();
+            abstractFild.botBoard.gameBoard[row][col] = HIT_SYMBOL; // Попадание
+            // Проверка на уничтожение корабля
+            if (abstractFild.botBoard.checkOtherCoordinates(row, col)) {
+                abstractFild.destroy(row, col, abstractFild.botBoard);// Закраска убитого корабля и уменьшение кол. кораблей
                 System.out.println("You Kill at " + (char) ('A' + col) + (row + 1));
             } else {
                 System.out.println("You Wounded at " + (char) ('A' + col) + (row + 1));
             }
             System.out.println("Bot Board");
-            botBoardField.printBoard();
-            processPlayerTurn();
-
-        } else if (botBoardField.gameBoard[row][col] == MISS_SYMBOL || botBoardField.gameBoard[row][col] == HIT_SYMBOL || botBoardField.gameBoard[row][col] == DESTROY_SYMBOL) {
+            abstractFild.botBoard.printBoard();
+            processPlayerTurn(abstractFild);
+            // Проверка на попадание в повреждённый участок корабля, повторную стрельбу
+        } else if (abstractFild.botBoard.gameBoard[row][col] == MISS_SYMBOL ||
+                abstractFild.botBoard.gameBoard[row][col] == HIT_SYMBOL ||
+                abstractFild.botBoard.gameBoard[row][col] == DESTROY_SYMBOL) {
             System.out.println("You have already shot at " + guess + ", choose a different coordinate ");
-            processPlayerTurn();
+            processPlayerTurn(abstractFild);
 
         } else {
-            botBoardField.gameBoard[row][col] = MISS_SYMBOL; // Промах
+            abstractFild.botBoard.gameBoard[row][col] = MISS_SYMBOL; // Промах
             System.out.println("Player missed at " + guess);
             System.out.println("Bot Board");
-            botBoardField.printBoard();
+            abstractFild.botBoard.printBoard();
         }
     }
 
-    private static void startOnlineGame() {
-//        BattleshipServer.startServer(); // Запуск сервера
+    private static void startOnlineGame(String name) {
 
-        // Создание экземпляра класса BattleshipField и заполнение его
-//        battleshipField = new BattleshipField();
-//        battleshipField.placeShips();
+//         BattleshipServer.startServer(); // Запуск сервера
 
         // Подключение к серверу WebSocket
         try {
@@ -170,15 +163,15 @@ public class BattleshipClient {
 
             while ((userInput = reader.readLine()) != null) {
                 battleshipClientEndpoint.sendMessage(userInput);
-                battleshipClientEndpoint.sendBattleshipField();
             }
 
         } catch (DeploymentException | URISyntaxException | IOException e) {
             System.err.println("Failed to connect to server: " + e.getMessage());
-        } catch (EncodeException e) {
-            throw new RuntimeException(e);
         }
 
     }
 
+    public static void gameOver() {
+        isGameOver = true;
+    }
 }
