@@ -10,7 +10,6 @@ import javax.websocket.*;
 
 public class BattleshipClient {
 
-
     private static final String SERVER_ADDRESS = "ws://localhost:8080/";
 
     private static Scanner scanner = new Scanner(System.in);
